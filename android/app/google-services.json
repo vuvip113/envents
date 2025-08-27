@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "868206830828",
+    "project_id": "pizaatime-edce8",
+    "storage_bucket": "pizaatime-edce8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:868206830828:android:2d84276bc2f045c81971c9",
+        "android_client_info": {
+          "package_name": "com.example.envents"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "868206830828-hrpmelf95asp1p5kl4lhse0id6jurch8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.envents",
+            "certificate_hash": "b6f65b35e24842a5fa64d81c20fe4ef2479d17a3"
+          }
+        },
+        {
+          "client_id": "868206830828-87u6ts3dvcatb646qih4sirbl5muokur.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDE9TSzjNpcx7UunalMYCeOqc2tZ8pQR_A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "868206830828-87u6ts3dvcatb646qih4sirbl5muokur.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
