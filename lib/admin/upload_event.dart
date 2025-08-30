@@ -327,6 +327,10 @@ class _UploadEventState extends State<UploadEvent> {
                     );
                     var downloadUrl = await (await task).ref.getDownloadURL();
 
+                    String firstletter = nameController.text
+                        .substring(0, 1)
+                        .toUpperCase();
+
                     String id = randomAlphaNumeric(10);
                     Map<String, dynamic> uploadEnvent = {
                       "Image": downloadUrl,
@@ -337,6 +341,8 @@ class _UploadEventState extends State<UploadEvent> {
                       'Date': DateFormat('yyyy-MM-dd').format(selectedDate),
                       'Time': formatTimeOfDay(selecectedTime),
                       'Location': locationController.text,
+                      'UpdatedName': nameController.text.toUpperCase(),
+                      'SearchKey': firstletter,
                     };
 
                     await DatabaseMethods().addEvent(uploadEnvent, id);

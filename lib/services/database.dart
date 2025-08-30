@@ -51,4 +51,11 @@ class DatabaseMethods {
   Future<Stream<QuerySnapshot>> getTickets() async {
     return FirebaseFirestore.instance.collection('Tickets').snapshots();
   }
+
+  Future<QuerySnapshot> searchByFirstLetter(String firstChar) async {
+    return await FirebaseFirestore.instance
+        .collection('Event')
+        .where('SearchKey', isEqualTo: firstChar)
+        .get();
+  }
 }
