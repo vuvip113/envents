@@ -1,4 +1,9 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:envents/pages/categories_event.dart';
+import 'package:envents/pages/detail_page.dart';
+import 'package:envents/services/database.dart';
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -8,6 +13,155 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  Stream? eventStream;
+
+  ontheload() async {
+    eventStream = await DatabaseMethods().getallEvents();
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    ontheload();
+  }
+
+  Widget allEvents() {
+    return StreamBuilder(
+      stream: eventStream,
+      builder: (context, AsyncSnapshot snapshot) {
+        return snapshot.hasData
+            ? ListView.builder(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                itemCount: snapshot.data.docs.length,
+                itemBuilder: (context, index) {
+                  DocumentSnapshot ds = snapshot.data.docs[index];
+                  String inputDate = ds['Date'];
+                  DateTime parsedDate = DateTime.parse(inputDate);
+                  String formattedDated = DateFormat(
+                    'MMM, dd',
+                  ).format(parsedDate);
+
+                  DateTime currentDate = DateTime.now();
+                  bool hasPassed = currentDate.isAfter(parsedDate);
+                  return hasPassed
+                      ? Container()
+                      : GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => DetailPage(
+                                  date: ds['Date'],
+                                  detail: ds['Detail'],
+                                  image: ds['Image'],
+                                  location: ds['Location'],
+                                  name: ds['Name'],
+                                  price: ds['Price'],
+                                ),
+                              ),
+                            );
+                          },
+                          child: Column(
+                            children: [
+                              Container(
+                                margin: EdgeInsets.only(right: 20),
+                                width: MediaQuery.of(context).size.width,
+                                decoration: BoxDecoration(),
+                                child: Stack(
+                                  children: [
+                                    ClipRRect(
+                                      borderRadius:
+                                          BorderRadiusGeometry.circular(10),
+                                      child: Image.network(
+                                        ds['Image'],
+                                        width: MediaQuery.of(
+                                          context,
+                                        ).size.width,
+                                        height: 200,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                    Container(
+                                      margin: EdgeInsets.only(
+                                        left: 10,
+                                        top: 10,
+                                      ),
+                                      width: 50,
+                                      decoration: BoxDecoration(
+                                        color: Colors.white,
+                                        borderRadius: BorderRadius.circular(10),
+                                      ),
+                                      child: Text(
+                                        formattedDated,
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          fontSize: 18,
+                                          color: Colors.black,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              SizedBox(height: 5),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    ds['Name'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 24,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: EdgeInsets.only(right: 20),
+                                    child: Text(
+                                      '\$' + ds['Price'],
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        color: const Color.fromARGB(
+                                          255,
+                                          0,
+                                          4,
+                                          255,
+                                        ),
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Icon(Icons.location_on_rounded),
+                                  Text(
+                                    ds['Location'],
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      color: Colors.black,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                },
+              )
+            : Container();
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -78,133 +232,177 @@ class _HomeState extends State<Home> {
               child: ListView(
                 scrollDirection: Axis.horizontal,
                 children: [
-                  Container(
-                    margin: EdgeInsets.only(bottom: 5),
-                    child: Material(
-                      elevation: 3,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: 130,
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              CategoriesEvent(eventcategory: 'Music'),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets /images/musical.png',
-                              height: 30,
-                              width: 30,
-                            ),
-                            Text(
-                              'Music',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.black,
+                      );
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 5),
+                      child: Material(
+                        elevation: 3,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: 130,
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                'assets /images/musical.png',
+                                height: 30,
+                                width: 30,
                               ),
-                            ),
-                          ],
+                              Text(
+                                'Music',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                   SizedBox(width: 30),
-                  Container(
-                    margin: EdgeInsets.only(bottom: 5),
-                    child: Material(
-                      elevation: 3,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: 130,
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              CategoriesEvent(eventcategory: 'Clothing'),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets /images/tshirt.png',
-                              height: 30,
-                              width: 30,
-                            ),
-                            Text(
-                              'Clothing',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.black,
+                      );
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 5),
+                      child: Material(
+                        elevation: 3,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: 130,
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                'assets /images/tshirt.png',
+                                height: 30,
+                                width: 30,
                               ),
-                            ),
-                          ],
+                              Text(
+                                'Clothing',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                   SizedBox(width: 30),
-                  Container(
-                    margin: EdgeInsets.only(bottom: 5),
-                    child: Material(
-                      elevation: 3,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: 130,
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              CategoriesEvent(eventcategory: 'Festival'),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets /images/confetti.png',
-                              height: 30,
-                              width: 30,
-                            ),
-                            Text(
-                              'Festival',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.black,
+                      );
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 5),
+                      child: Material(
+                        elevation: 3,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: 130,
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                'assets /images/confetti.png',
+                                height: 30,
+                                width: 30,
                               ),
-                            ),
-                          ],
+                              Text(
+                                'Festival',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                   SizedBox(width: 30),
-                  Container(
-                    margin: EdgeInsets.only(bottom: 5),
-                    child: Material(
-                      elevation: 3,
-                      borderRadius: BorderRadius.circular(10),
-                      child: Container(
-                        width: 130,
-                        padding: EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(10),
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              CategoriesEvent(eventcategory: 'Food'),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Image.asset(
-                              'assets /images/dish.png',
-                              height: 30,
-                              width: 30,
-                            ),
-                            Text(
-                              'Food',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.black,
+                      );
+                    },
+                    child: Container(
+                      margin: EdgeInsets.only(bottom: 5),
+                      child: Material(
+                        elevation: 3,
+                        borderRadius: BorderRadius.circular(10),
+                        child: Container(
+                          width: 130,
+                          padding: EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Image.asset(
+                                'assets /images/dish.png',
+                                height: 30,
+                                width: 30,
                               ),
-                            ),
-                          ],
+                              Text(
+                                'Food',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -234,77 +432,10 @@ class _HomeState extends State<Home> {
               ],
             ),
             SizedBox(height: 20),
-            Container(
-              margin: EdgeInsets.only(right: 20),
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(),
-              child: Stack(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadiusGeometry.circular(10),
-                    child: Image.asset(
-                      'assets /images/event.jpg',
-                      height: 200,
-                      width: MediaQuery.of(context).size.width,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Container(
-                    margin: EdgeInsets.only(left: 10, top: 10),
-                    width: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      'Aug\n24',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 18,
-                        color: Colors.black,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'VAnitas COncert',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 24,
-                    color: Colors.black,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Container(
-                  padding: EdgeInsets.only(right: 20),
-                  child: Text(
-                    '\$50',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 24,
-                      color: const Color.fromARGB(255, 0, 4, 255),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Row(
-              children: [
-                Icon(Icons.location_on_rounded),
-                Text(
-                  'Ha noi city',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 22, color: Colors.black),
-                ),
-              ],
+            SizedBox(
+              // height: 200,
+              // width: MediaQuery.of(context).size.width,
+              child: allEvents(),
             ),
           ],
         ),

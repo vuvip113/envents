@@ -1,28 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:envents/pages/detail_page.dart';
 import 'package:envents/services/database.dart';
-import 'package:envents/services/shared_pref.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
-class Booking extends StatefulWidget {
-  const Booking({super.key});
+class TicketEvent extends StatefulWidget {
+  const TicketEvent({super.key});
 
   @override
-  State<Booking> createState() => _BookingState();
+  State<TicketEvent> createState() => _TicketEventState();
 }
 
-class _BookingState extends State<Booking> {
-  Stream? bookingStream;
-  String? id;
-
-  getthesharepref() async {
-    id = await SharedPreferenceHelper().getUserId();
-    setState(() {});
-  }
+class _TicketEventState extends State<TicketEvent> {
+  Stream? ticketStream;
 
   ontheload() async {
-    await getthesharepref();
-    bookingStream = await DatabaseMethods().getBooking(id!);
+    ticketStream = await DatabaseMethods().getTickets();
     setState(() {});
   }
 
@@ -32,9 +25,9 @@ class _BookingState extends State<Booking> {
     ontheload();
   }
 
-  Widget allBookings() {
+  Widget allEvents() {
     return StreamBuilder(
-      stream: bookingStream,
+      stream: ticketStream,
       builder: (context, AsyncSnapshot snapshot) {
         return snapshot.hasData
             ? ListView.builder(
@@ -46,7 +39,7 @@ class _BookingState extends State<Booking> {
                   String inputDate = ds['Date'];
                   DateTime parsedDate = DateTime.parse(inputDate);
                   String formattedDated = DateFormat(
-                    'MMM, dd ,yyy',
+                    'MMM, dd',
                   ).format(parsedDate);
                   return Container(
                     margin: EdgeInsets.symmetric(horizontal: 20),
@@ -57,19 +50,25 @@ class _BookingState extends State<Booking> {
                     ),
                     child: Column(
                       children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.location_on_rounded, color: Colors.blue),
-                            SizedBox(width: 10),
-                            Text(
-                              ds['Location'],
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.black,
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                color: Colors.blue,
                               ),
-                            ),
-                          ],
+                              SizedBox(width: 10),
+                              Text(
+                                ds['Location'],
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.black,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                         Divider(),
                         Padding(
@@ -106,6 +105,24 @@ class _BookingState extends State<Booking> {
                                       SizedBox(width: 5),
                                       Text(
                                         formattedDated,
+                                        style: TextStyle(
+                                          fontSize: 20,
+                                          color: Colors.black,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: [
+                                      Image.network(
+                                        ds['Image'],
+                                        width: 25,
+                                        height: 25,
+                                        fit: BoxFit.cover,
+                                      ),
+                                      SizedBox(width: 5),
+                                      Text(
+                                        ds['Name'],
                                         style: TextStyle(
                                           fontSize: 20,
                                           color: Colors.black,
@@ -160,35 +177,33 @@ class _BookingState extends State<Booking> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        padding: EdgeInsets.only(top: 50, bottom: 50),
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xffe3e6ff), Color(0xfff1f3ff), Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        margin: EdgeInsets.only(left: 20, top: 40),
         child: Column(
           children: [
-            Text(
-              'Bokings',
-              style: TextStyle(fontSize: 20, color: Colors.black),
-            ),
-            SizedBox(height: 20),
-            Expanded(
-              child: Container(
-                width: MediaQuery.of(context).size.width,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
+            Padding(
+              padding: const EdgeInsets.only(left: 10),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(context);
+                    },
+                    child: Icon(Icons.arrow_back_ios_new_rounded),
                   ),
-                  color: Colors.white,
-                ),
-                child: Column(children: [SizedBox(height: 20), allBookings()]),
+                  SizedBox(width: MediaQuery.of(context).size.width / 20),
+                  Text(
+                    'Check Event Tickets By Admin ',
+                    style: TextStyle(
+                      fontSize: 20,
+                      color: Colors.black,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
               ),
             ),
+            SizedBox(height: 20),
+            allEvents(),
           ],
         ),
       ),

@@ -32,6 +32,7 @@ class _UploadEventState extends State<UploadEvent> {
   TextEditingController nameController = TextEditingController();
   TextEditingController priceController = TextEditingController();
   TextEditingController detailController = TextEditingController();
+  TextEditingController locationController = TextEditingController();
 
   DateTime selectedDate = DateTime.now();
   TimeOfDay selecectedTime = TimeOfDay(hour: 10, minute: 00);
@@ -179,6 +180,31 @@ class _UploadEventState extends State<UploadEvent> {
               ),
               SizedBox(height: 20),
               Text(
+                'Dia chi',
+                style: TextStyle(
+                  color: Colors.black,
+                  fontSize: 22,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 10),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  color: const Color.fromARGB(31, 131, 131, 131),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: TextField(
+                  controller: locationController,
+                  decoration: InputDecoration(
+                    border: InputBorder.none,
+                    hintText: "Enter dia chi ",
+                  ),
+                ),
+              ),
+              SizedBox(height: 20),
+              Text(
                 'Select Category',
                 style: TextStyle(
                   color: Colors.black,
@@ -310,6 +336,7 @@ class _UploadEventState extends State<UploadEvent> {
                       'Detail': detailController.text,
                       'Date': DateFormat('yyyy-MM-dd').format(selectedDate),
                       'Time': formatTimeOfDay(selecectedTime),
+                      'Location': locationController.text,
                     };
 
                     await DatabaseMethods().addEvent(uploadEnvent, id);

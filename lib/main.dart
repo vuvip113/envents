@@ -1,11 +1,15 @@
 import 'package:envents/admin/upload_event.dart';
+import 'package:envents/pages/bottom_nav.dart';
 import 'package:envents/pages/home.dart';
 import 'package:envents/pages/sign_up.dart';
+import 'package:envents/services/data.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_stripe/flutter_stripe.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  Stripe.publishableKey = publishedkey;
   await Firebase.initializeApp();
   runApp(const MyApp());
 }
@@ -20,7 +24,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),
-      home: UploadEvent(),
+      home: BottomNav(),
     );
   }
 }

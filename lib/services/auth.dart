@@ -1,5 +1,6 @@
 import 'package:envents/pages/bottom_nav.dart';
 import 'package:envents/services/database.dart';
+import 'package:envents/services/shared_pref.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -35,9 +36,13 @@ class AuthMethods {
         credential,
       );
       User? user = result.user;
+      await SharedPreferenceHelper().saveUserEmail(user!.email!);
+      await SharedPreferenceHelper().saveUserName(user.displayName!);
+      await SharedPreferenceHelper().saveUserImage(user.photoURL!);
+      await SharedPreferenceHelper().saveUserId(user.uid);
 
       Map<String, dynamic> userdata = {
-        "Name": user!.displayName,
+        "Name": user.displayName,
         'Email': user.email,
         'Image': user.photoURL,
         'id': user.uid,
