@@ -283,7 +283,6 @@ class _DetailPageState extends State<DetailPage> {
         'currency': currency,
         'payment_method_types[]': 'card',
       };
-
       final response = await http.post(
         Uri.parse('https://api.stripe.com/v1/payment_intents'),
         headers: {
