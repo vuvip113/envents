@@ -13,6 +13,7 @@ import 'package:intl/intl.dart';
 // ignore: must_be_immutable
 class DetailPage extends StatefulWidget {
   String image, name, location, date, detail, price;
+  bool checked;
   DetailPage({
     super.key,
     required this.price,
@@ -21,6 +22,7 @@ class DetailPage extends StatefulWidget {
     required this.location,
     required this.date,
     required this.detail,
+    required this.checked,
   });
 
   @override
@@ -325,13 +327,17 @@ class _DetailPageState extends State<DetailPage> {
               'Name': name,
               'Image': image,
               'EventImage': widget.image,
+              'Checked': widget.checked,
             };
 
-            await DatabaseMethods().addUserBooking(bookingdetail, id!).then((
-              value,
-            ) async {
-              await DatabaseMethods().addAdminTicket(bookingdetail);
-            });
+            // 1. Thêm Booking, lấy bookingId
+            String bookingId = await DatabaseMethods().addUserBooking(
+              bookingdetail,
+              id!,
+            );
+
+            // 2. Thêm Ticket admin với cùng bookingId
+            await DatabaseMethods().addAdminTicket(bookingdetail, bookingId);
 
             // done
             showDialog(

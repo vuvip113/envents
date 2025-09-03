@@ -332,6 +332,7 @@ class _UploadEventState extends State<UploadEvent> {
                         .toUpperCase();
 
                     String id = randomAlphaNumeric(10);
+
                     Map<String, dynamic> uploadEnvent = {
                       "Image": downloadUrl,
                       'Name': nameController.text,
@@ -343,6 +344,7 @@ class _UploadEventState extends State<UploadEvent> {
                       'Location': locationController.text,
                       'UpdatedName': nameController.text.toUpperCase(),
                       'SearchKey': firstletter,
+                      'Checked': false,
                     };
 
                     await DatabaseMethods().addEvent(uploadEnvent, id);

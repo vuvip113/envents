@@ -77,4 +77,38 @@ class AuthMethods {
     User? user = FirebaseAuth.instance.currentUser;
     user?.delete();
   }
+
+  // Đăng nhập
+  Future<User?> signInWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    try {
+      UserCredential result = await auth.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return result.user;
+    } catch (e) {
+      print("Login error: $e");
+      return null;
+    }
+  }
+
+  // Đăng ký
+  Future<User?> signUpWithEmailAndPassword(
+    String email,
+    String password,
+  ) async {
+    try {
+      UserCredential result = await auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+      return result.user;
+    } catch (e) {
+      print("Signup error: $e");
+      return null;
+    }
+  }
 }

@@ -58,6 +58,7 @@ class _CategoriesEventState extends State<CategoriesEvent> {
                             location: ds['Location'],
                             name: ds['Name'],
                             price: ds['Price'],
+                            checked: ds['Checked'],
                           ),
                         ),
                       );

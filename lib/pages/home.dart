@@ -2,7 +2,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:envents/pages/categories_event.dart';
 import 'package:envents/pages/detail_page.dart';
 import 'package:envents/services/database.dart';
+import 'package:envents/services/shared_pref.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
 
 class Home extends StatefulWidget {
@@ -13,10 +16,70 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  String? currentCity, name;
+
+  getthesharedpref() async {
+    name = await SharedPreferenceHelper().getUserName();
+    setState(() {});
+  }
+
+  Future<void> getCurrentCity() async {
+    try {
+      LocationPermission permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        setState(() {
+          currentCity = 'Permission Denied';
+        });
+        return;
+      }
+
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      List<Placemark> placemarks = await placemarkFromCoordinates(
+        position.latitude,
+        position.longitude,
+      );
+
+      if (placemarks.isNotEmpty) {
+        final place = placemarks.first;
+
+        setState(() {
+          currentCity =
+              [
+                    place.name,
+                    place.street,
+                    place.subLocality,
+                    place.subAdministrativeArea,
+                    place.administrativeArea,
+                    place.country,
+                  ]
+                  .where((e) => e != null && e.isNotEmpty) // bỏ null và rỗng
+                  .join(", ");
+        });
+
+        print("Địa chỉ chi tiết: $currentCity");
+      } else {
+        setState(() {
+          currentCity = 'Không tìm thấy city';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        currentCity = 'Error: $e';
+      });
+    }
+  }
+
   Stream? eventStream;
 
   ontheload() async {
+    await getthesharedpref();
     eventStream = await DatabaseMethods().getallEvents();
+    await getCurrentCity();
+    print('vi tri dien thoaij$currentCity');
     setState(() {});
   }
 
@@ -104,6 +167,7 @@ class _HomeState extends State<Home> {
                                   location: ds['Location'],
                                   name: ds['Name'],
                                   price: ds['Price'],
+                                  checked: ds['Checked'],
                                 ),
                               ),
                             );
@@ -222,6 +286,7 @@ class _HomeState extends State<Home> {
               location: element['Location'],
               name: element['Name'],
               price: element['Price'],
+              checked: element['Checked'],
             ),
           ),
         );
@@ -289,318 +354,353 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        padding: EdgeInsets.only(top: 50, bottom: 50, left: 20),
-        width: MediaQuery.of(context).size.width,
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Color(0xffe3e6ff), Color(0xfff1f3ff), Colors.white],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.location_on_rounded),
-                Text(
-                  'khoi 8 thi tran dak to',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
+      body: currentCity == null
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Container(
+                padding: EdgeInsets.only(top: 50, bottom: 50, left: 20),
+                width: MediaQuery.of(context).size.width,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xffe3e6ff),
+                      Color(0xfff1f3ff),
+                      Colors.white,
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
                 ),
-              ],
-            ),
-            SizedBox(height: 20),
-            Text(
-              'Hello, Vanitas',
-              style: TextStyle(
-                fontSize: 30,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            SizedBox(height: 10),
-            Text(
-              'there are 13 events\naround your location',
-              style: TextStyle(
-                fontSize: 25,
-                fontWeight: FontWeight.bold,
-                color: Color(0xff6351ec),
-              ),
-            ),
-            SizedBox(height: 20),
-            Container(
-              margin: EdgeInsets.only(right: 20),
-              padding: EdgeInsets.only(left: 20),
-              width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: TextField(
-                controller: searchController,
-                onChanged: (value) {
-                  if (value.isEmpty) {
-                    setState(() {
-                      queryResultSet = [];
-                      tempSearchStore = [];
-                      search = false; // thêm để ẩn list khi xoá hết text
-                    });
-                  } else {
-                    initiateSearch(value);
-                    setState(() {
-                      search = true;
-                    });
-                  }
-                },
-                decoration: InputDecoration(
-                  suffixIcon: Icon(Icons.search_rounded),
-                  border: InputBorder.none,
-                  hintText: 'Tim kiem vi tri',
-                ),
-              ),
-            ),
-            SizedBox(height: 20),
-            search
-                ? ListView(
-                    padding: EdgeInsets.only(left: 10, right: 10),
-                    primary: false,
-                    shrinkWrap: true,
-                    children: tempSearchStore.map((element) {
-                      return buildResultcard(element);
-                    }).toList(),
-                  )
-                : Column(
-                    children: [
-                      SizedBox(
-                        height: 100,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: [
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        CategoriesEvent(eventcategory: 'Music'),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                margin: EdgeInsets.only(bottom: 5),
-                                child: Material(
-                                  elevation: 3,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    width: 130,
-                                    padding: EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Image.asset(
-                                          'assets /images/musical.png',
-                                          height: 30,
-                                          width: 30,
-                                        ),
-                                        Text(
-                                          'Music',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 30),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CategoriesEvent(
-                                      eventcategory: 'Clothing',
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                margin: EdgeInsets.only(bottom: 5),
-                                child: Material(
-                                  elevation: 3,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    width: 130,
-                                    padding: EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Image.asset(
-                                          'assets /images/tshirt.png',
-                                          height: 30,
-                                          width: 30,
-                                        ),
-                                        Text(
-                                          'Clothing',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 30),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => CategoriesEvent(
-                                      eventcategory: 'Festival',
-                                    ),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                margin: EdgeInsets.only(bottom: 5),
-                                child: Material(
-                                  elevation: 3,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    width: 130,
-                                    padding: EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Image.asset(
-                                          'assets /images/confetti.png',
-                                          height: 30,
-                                          width: 30,
-                                        ),
-                                        Text(
-                                          'Festival',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            SizedBox(width: 30),
-                            GestureDetector(
-                              onTap: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        CategoriesEvent(eventcategory: 'Food'),
-                                  ),
-                                );
-                              },
-                              child: Container(
-                                margin: EdgeInsets.only(bottom: 5),
-                                child: Material(
-                                  elevation: 3,
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: Container(
-                                    width: 130,
-                                    padding: EdgeInsets.all(10),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Image.asset(
-                                          'assets /images/dish.png',
-                                          height: 30,
-                                          width: 30,
-                                        ),
-                                        Text(
-                                          'Food',
-                                          style: TextStyle(
-                                            fontSize: 20,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      SizedBox(height: 20),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Text(
-                            'Upcoming events',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.location_on_rounded),
+                        Expanded(
+                          child: Text(
+                            currentCity!,
                             style: TextStyle(
                               fontSize: 20,
+                              fontWeight: FontWeight.w500,
                               color: Colors.black,
-                              fontWeight: FontWeight.bold,
                             ),
+                            maxLines: 1, // giới hạn 1 dòng
+                            overflow: TextOverflow
+                                .ellipsis, // hiển thị ... nếu quá dài
+                            softWrap: false, // không xuống dòng
                           ),
-                          Container(
-                            margin: EdgeInsets.only(right: 20),
-                            child: Text(
-                              'See all',
-                              style: TextStyle(
-                                fontSize: 20,
-                                color: Colors.black,
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 20),
+                    Text(
+                      'Hello, $name',
+                      style: TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    Text(
+                      'there are 13 events\naround your location',
+                      style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff6351ec),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    Container(
+                      margin: EdgeInsets.only(right: 20),
+                      padding: EdgeInsets.only(left: 20),
+                      width: MediaQuery.of(context).size.width,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: TextField(
+                        controller: searchController,
+                        onChanged: (value) {
+                          if (value.isEmpty) {
+                            setState(() {
+                              queryResultSet = [];
+                              tempSearchStore = [];
+                              search =
+                                  false; // thêm để ẩn list khi xoá hết text
+                            });
+                          } else {
+                            initiateSearch(value);
+                            setState(() {
+                              search = true;
+                            });
+                          }
+                        },
+                        decoration: InputDecoration(
+                          suffixIcon: Icon(Icons.search_rounded),
+                          border: InputBorder.none,
+                          hintText: 'Tim kiem vi tri',
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20),
+                    search
+                        ? ListView(
+                            padding: EdgeInsets.only(left: 10, right: 10),
+                            primary: false,
+                            shrinkWrap: true,
+                            children: tempSearchStore.map((element) {
+                              return buildResultcard(element);
+                            }).toList(),
+                          )
+                        : Column(
+                            children: [
+                              SizedBox(
+                                height: 100,
+                                child: ListView(
+                                  scrollDirection: Axis.horizontal,
+                                  children: [
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CategoriesEvent(
+                                                  eventcategory: 'Music',
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: EdgeInsets.only(bottom: 5),
+                                        child: Material(
+                                          elevation: 3,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Container(
+                                            width: 130,
+                                            padding: EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Image.asset(
+                                                  'assets /images/musical.png',
+                                                  height: 30,
+                                                  width: 30,
+                                                ),
+                                                Text(
+                                                  'Music',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 30),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CategoriesEvent(
+                                                  eventcategory: 'Clothing',
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: EdgeInsets.only(bottom: 5),
+                                        child: Material(
+                                          elevation: 3,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Container(
+                                            width: 130,
+                                            padding: EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Image.asset(
+                                                  'assets /images/tshirt.png',
+                                                  height: 30,
+                                                  width: 30,
+                                                ),
+                                                Text(
+                                                  'Clothing',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 30),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CategoriesEvent(
+                                                  eventcategory: 'Festival',
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: EdgeInsets.only(bottom: 5),
+                                        child: Material(
+                                          elevation: 3,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Container(
+                                            width: 130,
+                                            padding: EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Image.asset(
+                                                  'assets /images/confetti.png',
+                                                  height: 30,
+                                                  width: 30,
+                                                ),
+                                                Text(
+                                                  'Festival',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 30),
+                                    GestureDetector(
+                                      onTap: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                CategoriesEvent(
+                                                  eventcategory: 'Food',
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                      child: Container(
+                                        margin: EdgeInsets.only(bottom: 5),
+                                        child: Material(
+                                          elevation: 3,
+                                          borderRadius: BorderRadius.circular(
+                                            10,
+                                          ),
+                                          child: Container(
+                                            width: 130,
+                                            padding: EdgeInsets.all(10),
+                                            decoration: BoxDecoration(
+                                              color: Colors.white,
+                                              borderRadius:
+                                                  BorderRadius.circular(10),
+                                            ),
+                                            child: Column(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: [
+                                                Image.asset(
+                                                  'assets /images/dish.png',
+                                                  height: 30,
+                                                  width: 30,
+                                                ),
+                                                Text(
+                                                  'Food',
+                                                  style: TextStyle(
+                                                    fontSize: 20,
+                                                    color: Colors.black,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
+                              SizedBox(height: 20),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Upcoming events',
+                                    style: TextStyle(
+                                      fontSize: 20,
+                                      color: Colors.black,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  Container(
+                                    margin: EdgeInsets.only(right: 20),
+                                    child: Text(
+                                      'See all',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 20),
+                              SizedBox(
+                                height:
+                                    MediaQuery.of(context).size.height *
+                                    0.5, // chiếm 50% màn hình
+                                child: allEvents(),
+                              ),
+                            ],
                           ),
-                        ],
-                      ),
-                      SizedBox(height: 20),
-                      SizedBox(
-                        // height: 200,
-                        // width: MediaQuery.of(context).size.width,
-                        child: allEvents(),
-                      ),
-                    ],
-                  ),
-          ],
-        ),
-      ),
+                  ],
+                ),
+              ),
+            ),
     );
   }
 }
